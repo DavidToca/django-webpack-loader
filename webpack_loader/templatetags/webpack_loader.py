@@ -1,11 +1,12 @@
 from django import template
 from django.conf import settings
 from django.utils.safestring import mark_safe
+import logging
 
 from ..utils import get_loader
 
 register = template.Library()
-
+logger = logging.getLogger('webpack_loader')
 
 def filter_by_extension(bundle, extension):
     '''Return only files with the given extension'''
@@ -37,9 +38,13 @@ def _get_bundle(bundle_name, extension, config):
 
 @register.simple_tag
 def render_bundle(bundle_name, extension=None, config='DEFAULT'):
+    logger.info("[{}] is called for rendering".format(bundle_name))
     try:
         return render_as_tags(_get_bundle(bundle_name, extension, config))
     except (IOError, KeyError) as e:
+        logger.error("[{}] failed rendering, reason: {}".format(
+            bundle_name, e)
+        )
         return '<script>console.error("{} - {}");</script>'.format(
             bundle_name,
             e

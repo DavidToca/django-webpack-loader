@@ -1,11 +1,14 @@
 import json
 import time
+import logging
 
 from django.conf import settings
 from django.contrib.staticfiles.storage import staticfiles_storage
 
 from .exceptions import WebpackError, WebpackLoaderBadStatsError
 from .config import load_config
+
+logger = logging.getLogger('webpack_loader')
 
 
 class WebpackLoader(object):
@@ -52,13 +55,18 @@ class WebpackLoader(object):
 
     def get_bundle(self, bundle_name):
         assets = self.get_assets()
+        logger.debug("[{}][{}] get_bundle".format(
+            bundle_name,  assets.get('status')))
 
         if settings.DEBUG:
-            # poll when debugging and block request until bundle is compiled
-            # TODO: support timeouts
-            while assets['status'] == 'compiling':
-                time.sleep(self.config['POLL_INTERVAL'])
-                assets = self.get_assets()
+            if assets['status'] == 'compiling':
+                if 'file' not in assets:
+                    assets['file'] = ''
+
+                error = u"{file} is compiling ".format(**assets)
+                logger.error("[{}][ERROR] {}".format(
+                    bundle_name,  error))
+                raise IOError(error)
 
         if assets.get('status') == 'done':
             chunks = assets['chunks'][bundle_name]
