@@ -56,7 +56,7 @@ def webpack_static(asset_name, config='DEFAULT'):
     )
 
 
-@register.assignment_tag
+@register.simple_tag
 def get_files(bundle_name, extension=None, config='DEFAULT'):
     """
     Returns all chunks in the given bundle.
